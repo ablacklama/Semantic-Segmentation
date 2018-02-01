@@ -126,7 +126,7 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     :param learning_rate: TF Placeholder for learning rate
     """
     # TODO: Implement function
-    learn_rate = 0.00005
+    learn_rate = 0.0001
     keep_probability = .5
     init = tf.global_variables_initializer()
     sess.run(init)
@@ -145,7 +145,7 @@ def run():
     image_shape = (160, 576)
     data_dir = './data'
     runs_dir = './runs'
-    epochs = 70
+    epochs = 30
     batch_size = 6
     tests.test_for_kitti_dataset(data_dir)
 
