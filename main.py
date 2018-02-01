@@ -137,11 +137,6 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
             _, loss = sess.run([train_op, cross_entropy_loss], feed_dict=feed_dictionary)
         print("epoch: {}".format(epoch + 1), " loss: {:.4f}".format(loss))
     print("Training Complete for {} epochs".format(epochs))
-
-
-
-
-    pass
 tests.test_train_nn(train_nn)
 
 
@@ -150,6 +145,8 @@ def run():
     image_shape = (160, 576)
     data_dir = './data'
     runs_dir = './runs'
+    epochs = 50
+    batch_size = 5
     tests.test_for_kitti_dataset(data_dir)
 
     # Download pretrained vgg model
@@ -169,12 +166,21 @@ def run():
         #  https://datascience.stackexchange.com/questions/5224/how-to-prepare-augment-images-for-neural-network
 
         # TODO: Build NN using load_vgg, layers, and optimize function
+        correct_label = tf.placeholder(tf.int32, [None, None, None, num_classes], name='correct_label')
+        learning_rate = tf.placeholder(tf.float32, name='learning_rate')
+
+        input_image, keep_prob, l3, l4, l7 = load_vgg(sess, vgg_path)
+        output = layers(l3,l4,l7,num_classes)
+        logits, optimizer, cross_entropy_loss = optimize(output, correct_label, learning_rate, num_classes)
 
         # TODO: Train NN using the train_nn function
+        train_nn(sess, epochs, batch_size, get_batches_fn, optimizer, cross_entropy_loss, input_image,
+                 correct_label, keep_prob, learning_rate)
 
         # TODO: Save inference data using helper.save_inference_samples
         #  helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image)
-
+        print("saving model inference data...")
+        helper.save_inference_samples(runs_dir,data_dir,sess,image_shape,logits,keep_prob,input_image)
         # OPTIONAL: Apply the trained model to a video
 
 
