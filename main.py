@@ -54,13 +54,14 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     """
     # TODO: Implement function
     kern_reg = tf.contrib.layers.l2_regularizer(1e-3)
+    kern_init = tf.truncated_normal_initializer(stddev=0.1)
 
     conv_1x1_l3 = tf.layers.conv2d(vgg_layer3_out, num_classes, kernel_size=1, padding='same',
-                                           kernel_regularizer=kern_reg)
+                                           kernel_regularizer=kern_reg, kernel_initializer=kern_init)
     conv_1x1_l4 = tf.layers.conv2d(vgg_layer4_out, num_classes, kernel_size=1, padding='same',
-                                           kernel_regularizer=kern_reg)
+                                           kernel_regularizer=kern_reg, kernel_initializer=kern_init)
     conv_1x1_l7 = tf.layers.conv2d(vgg_layer7_out, num_classes, kernel_size=1, padding='same',
-                                           kernel_regularizer=kern_reg)
+                                           kernel_regularizer=kern_reg, kernel_initializer=kern_init)
 
     upsample_1 = tf.layers.conv2d_transpose(conv_1x1_l7, num_classes, 4,strides=(2,2), padding='same',
                                         kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
@@ -72,14 +73,14 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
 
 
     upsample_2 = tf.layers.conv2d_transpose(skip_1, num_classes, 4, strides=(2, 2), padding='same',
-                                        kernel_regularizer=kern_reg)
+                                        kernel_regularizer=kern_reg, kernel_initializer=kern_init)
     #relu = tf.nn.leaky_relu(output)
 
 
     skip_2 = tf.add(upsample_2, conv_1x1_l3)
 
     upsample_3 = tf.layers.conv2d_transpose(skip_2, num_classes, 16, strides=(8, 8), padding='same',
-                                        kernel_regularizer=kern_reg)
+                                        kernel_regularizer=kern_reg, kernel_initializer=kern_init)
     #relu = tf.nn.leaky_relu(output)
 
 
@@ -102,9 +103,8 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     logits = tf.reshape(nn_last_layer, (-1, num_classes))
     labels = tf.reshape(correct_label, (-1, num_classes))
 
-
-
-    cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits,labels=labels))
+    reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+    cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits,labels=labels)) + sum(reg_losses)
     optimizer = tf.train.AdamOptimizer(learning_rate).minimize(cross_entropy_loss)
     return logits,optimizer,cross_entropy_loss
 tests.test_optimize(optimize)
@@ -126,7 +126,7 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     :param learning_rate: TF Placeholder for learning rate
     """
     # TODO: Implement function
-    learn_rate = 0.0007
+    learn_rate = 0.00005
     keep_probability = .5
     init = tf.global_variables_initializer()
     sess.run(init)
